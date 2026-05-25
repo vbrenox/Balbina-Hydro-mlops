@@ -1,28 +1,16 @@
-"""
-consolidar_balbina.py
----------------------
-Lê todos os CSVs mensais hidrológicos da ANEEL de uma pasta,
-filtra apenas os registros de BALBINA e salva um único arquivo
-consolidado pronto para o pipeline DVC.
 
-Uso:
-    python consolidar_balbina.py
-
-    Por padrão espera os CSVs na pasta ./data/raw/mensais/
-    e salva o resultado em ./data/raw/balbina_consolidado.csv
-"""
 
 import os
 import glob
 import pandas as pd
 
-# ── Configurações ──────────────────────────────────────────────
+
 PASTA_ENTRADA = "./data/raw/mensais"          # pasta com os 12 CSVs mensais
 ARQUIVO_SAIDA = "./data/raw/balbina_consolidado.csv"
 FILTRO_USINA  = "BALBINA"                     # valor em nom_reservatorio
 SEPARADOR     = ";"                           # ponto e vírgula (padrão ANEEL)
 ENCODING      = "latin-1"                     # corrige acentuação da ANEEL
-# ──────────────────────────────────────────────────────────────
+
 
 
 def carregar_csv(caminho: str) -> pd.DataFrame:
