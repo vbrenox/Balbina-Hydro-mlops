@@ -1,0 +1,25 @@
+# Datasets brutos - versionados pelo DVC
+data/raw/mensais/
+data/raw/balbina_consolidado.csv
+data/processed/balbina_processado.csv
+
+# Script de consolidação - pode commitar ou não
+# consolidar_balbina.py
+
+# Ambiente virtual
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# MLflow 
+mlruns/
+
+# Windows
+Thumbs.db
+desktop.ini
