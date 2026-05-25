@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+mlflow==3.12.0
+scikit-learn
+pandas
+numpy
+pydantic

@@ -1,9 +1,10 @@
 import mlflow.pyfunc
 import os
-import uvicorn
+from pathlib import Path
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
+from mlflow.tracking import MlflowClient
 
 modelo = {}
 
@@ -15,15 +16,27 @@ class DadosEntrada(BaseModel):
     dia:  int = Field(..., example=1)
     hora: int = Field(..., example=1)
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
-        mlflow.set_tracking_uri(f"file:///{os.path.abspath('mlruns').replace(os.sep, '/')}")
-        from mlflow.tracking import MlflowClient
+        # Detecta ambiente Docker ou local
+        if os.path.exists("/.dockerenv"):
+            MLRUNS_PATH = "file:///app/mlruns"
+        else:
+            MLRUNS_PATH = f"file:///{os.path.abspath('mlruns').replace(os.sep, '/')}"
+
+        mlflow.set_tracking_uri(MLRUNS_PATH)
+        print(f"MLflow tracking URI: {MLRUNS_PATH}")
+
         c = MlflowClient()
         v = c.get_model_version_by_alias("previsor_vazao_balbina", "production")
         source = v.source
+
+        # Traduz o caminho do source para o ambiente atual
+        if os.path.exists("/.dockerenv"):
+            partes = source.split("mlruns/")
+            source = f"file:///app/mlruns/{partes[1]}"
+
         print(f"Carregando modelo de: {source}")
         modelo["pipeline"] = mlflow.pyfunc.load_model(source)
         modelo["uri"] = source
