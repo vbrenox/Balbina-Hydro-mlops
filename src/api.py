@@ -19,7 +19,7 @@ class DadosEntrada(BaseModel):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
-        mlflow.set_tracking_uri("file:///C:/projetos-estudo/balbina-hydro-mlops/mlruns")
+        mlflow.set_tracking_uri(f"file:///{os.path.abspath('mlruns').replace(os.sep, '/')}")
         from mlflow.tracking import MlflowClient
         c = MlflowClient()
         v = c.get_model_version_by_alias("previsor_vazao_balbina", "production")
