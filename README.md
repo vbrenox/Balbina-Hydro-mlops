@@ -25,6 +25,27 @@ Total após limpeza: 12.077 registros
 O script `consolidar_balbina.py` automatiza a leitura dos 17 arquivos mensais,
 filtra apenas os registros de Balbina e gera o dataset consolidado.
 
+## Como o dataset foi construído
+
+Os dados hidrológicos da ANEEL são disponibilizados mensalmente no portal de dados abertos.
+Cada arquivo mensal contém registros horários de diversas usinas do Brasil.
+
+O script `consolidar_balbina.py` realiza as seguintes etapas automaticamente:
+
+1. Lê todos os CSVs mensais da pasta `data/raw/mensais/`
+2. Filtra apenas os registros da UHE Balbina (`nom_reservatorio == 'BALBINA'`)
+3. Corrige o encoding latin-1 dos arquivos originais para utf-8
+4. Converte as colunas numéricas e a coluna de data para os tipos corretos
+5. Adiciona colunas auxiliares de ano, mês, dia e hora
+6. Remove duplicatas geradas pela sobreposição entre arquivos mensais
+7. Salva o dataset consolidado em `data/raw/balbina_consolidado.csv`
+
+Para reproduzir a consolidação:
+
+```bash
+python consolidar_balbina.py
+```
+
 ## Estrutura
 
 ```
