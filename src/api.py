@@ -1,5 +1,6 @@
 import mlflow.pyfunc
 import os
+import pickle
 from pathlib import Path
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
@@ -19,25 +20,33 @@ class DadosEntrada(BaseModel):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
-        # Detecta ambiente Docker ou local
         if os.path.exists("/.dockerenv"):
             MLRUNS_PATH = "file:///app/mlruns"
+            EXP_BASE = "/app/mlruns"
         else:
             MLRUNS_PATH = f"file:///{os.path.abspath('mlruns').replace(os.sep, '/')}"
+            EXP_BASE = os.path.abspath('mlruns')
 
         mlflow.set_tracking_uri(MLRUNS_PATH)
         print(f"MLflow tracking URI: {MLRUNS_PATH}")
 
-        c = MlflowClient()
-        v = c.get_model_version_by_alias("previsor_vazao_balbina", "production")
-        source = v.source
+        # MLflow 3.x salva modelos em models/ em vez de artifacts/ do run
+        # Busca automaticamente o GradientBoosting mais recente
+        exp_id = "737769590242991027"
+        models_path = os.path.join(EXP_BASE, exp_id, "models")
+        modelos_gb = []
+        for m in os.listdir(models_path):
+            pkl = os.path.join(models_path, m, "artifacts", "model.pkl")
+            if os.path.exists(pkl):
+                with open(pkl, "rb") as f:
+                    pipe = pickle.load(f)
+                if "GradientBoosting" in type(pipe.named_steps['clf']).__name__:
+                    modelos_gb.append((os.path.getmtime(pkl), m))
+        modelos_gb.sort(reverse=True)
+        modelo_id = modelos_gb[0][1]
+        source = f"{MLRUNS_PATH}/{exp_id}/models/{modelo_id}/artifacts"
+        print(f"Modelo encontrado: {source}")
 
-        # Traduz o caminho do source para o ambiente atual
-        if os.path.exists("/.dockerenv"):
-            partes = source.split("mlruns/")
-            source = f"file:///app/mlruns/{partes[1]}"
-
-        print(f"Carregando modelo de: {source}")
         modelo["pipeline"] = mlflow.pyfunc.load_model(source)
         modelo["uri"] = source
         print("[OK] Modelo carregado!")
