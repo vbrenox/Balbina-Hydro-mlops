@@ -6,6 +6,10 @@ data/processed/balbina_processado.csv
 # Script de consolidação - pode commitar ou não
 # consolidar_balbina.py
 
+# Entrega
+entrega_final/
+entrega_final.zip
+
 # Ambiente virtual
 venv/
 
