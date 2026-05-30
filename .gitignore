@@ -27,3 +27,4 @@ mlruns/
 # Windows
 Thumbs.db
 desktop.ini
+/mlruns
