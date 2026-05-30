@@ -2,7 +2,7 @@
 
 Projeto de machine learning para previsão de vazão defluente da UHE Balbina (AM),
 desenvolvido como Desafio 01 da disciplina de Data Science, Machine Learning e Data Mining
-do curso de Digital Transformation — IFAM / AxAcademy.
+do curso de Digital Transformation - IFAM / AxAcademy.
 
 ## Problema
 
@@ -46,6 +46,40 @@ Para reproduzir a consolidação:
 python consolidar_balbina.py
 ```
 
+## Arquitetura
+
+O projeto segue o ciclo CRISP-DM completo, do dado bruto até o endpoint em produção.
+
+### Fluxo da arquitetura
+
+```mermaid
+flowchart TD
+    A[ANEEL - dados públicos] --> B[consolidar_balbina.py\nETL: 17 CSVs mensais]
+    B --> C[balbina_consolidado.csv]
+    C --> D[01_eda.ipynb\nLimpeza e insights]
+    D --> E[balbina_processado.csv]
+    E --> F[02_modelagem.ipynb\n3 modelos + MLflow]
+    F --> G[MLflow Registry @production]
+    G --> H[FastAPI /predict\nDocker Compose]
+```
+
+### Pipeline do modelo
+
+```mermaid
+flowchart TD
+    A[Features - 6 colunas] --> B[ColumnTransformer]
+    B --> C[SimpleImputer\nestratégia: mediana]
+    C --> D[StandardScaler\nnormalização z-score]
+    D --> E[GradientBoostingRegressor\nRMSE: 83.26 - R²: 0.90]
+```
+
+**Stack utilizada:**
+- `scikit-learn` - Pipeline, ColumnTransformer, modelos de regressão
+- `MLflow` - rastreamento de experimentos e Model Registry
+- `DVC` - versionamento de datasets e mlruns
+- `FastAPI` + `uvicorn` - servidor da API
+- `Docker Compose` - containerização
+
 ## Estrutura
 
 ```
@@ -58,13 +92,18 @@ python consolidar_balbina.py
 │       └── balbina_processado.csv.dvc
 ├── notebooks/
 │   ├── 01_eda.ipynb                   # Análise exploratória
-│   └── 02_modelagem.ipynb             # Treinamento e MLflow
+│   ├── 01_eda.pdf
+│   ├── 02_modelagem.ipynb             # Treinamento e MLflow
+│   └── 02_modelagem.pdf
+├── screenshots/                       # Screenshots MLflow e Swagger
 ├── src/
 │   ├── api.py                         # FastAPI
 │   ├── promover.py                    # Promove modelo para @production
 │   └── treino.py                      # Referência ao notebook de treino
-├── mlruns/                            # MLflow Tracking local
+├── mlruns/                            # MLflow Tracking local (versionado no DVC)
 ├── consolidar_balbina.py              # ETL dos CSVs mensais
+├── montar_zip.py                      # Script para empacotar entrega
+├── mlruns.dvc                         # MLflow versionado no DVC
 ├── Dockerfile
 ├── docker-compose.yml
 ├── requirements.txt
@@ -95,34 +134,38 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 3. Recuperar datasets via DVC
+### 3. Recuperar datasets e mlruns via DVC
 
 ```bash
-dvc remote add -d local C:/dvcstore
 dvc pull
 ```
 
 ### 4. Treinar os modelos
 
-Abra o Jupyter e execute o `notebooks/02_modelagem.ipynb` do início ao fim:
+Abra o Jupyter e execute os notebooks em ordem:
 
 ```bash
 jupyter notebook
 ```
 
-### 5. Promover modelo para produção
+- `notebooks/01_eda.ipynb` - análise exploratória
+- `notebooks/02_modelagem.ipynb` - treinamento e registro no MLflow
 
-```bash
-python src/promover.py
-```
-
-### 6. Subir a API
+### 5. Subir a API
 
 ```bash
 docker compose up --build
 ```
 
 Acesse: `http://localhost:8000/docs`
+
+### 6. Subir o MLflow UI (opcional)
+
+```bash
+mlflow ui --backend-store-uri ./mlruns --port 5002
+```
+
+Acesse: `http://localhost:5002`
 
 ## Comparativo dos modelos
 
@@ -143,13 +186,18 @@ Acesse: `http://localhost:8000/docs`
 ## Soluções técnicas
 
 - Detecção automática de ambiente Docker vs local via `/.dockerenv`
-- Caminho universal para MLflow via `Path(__file__).resolve()`
-- Tradução de caminhos do Model Registry entre ambientes
+- Busca automática do modelo mais recente na pasta `models/` do MLflow 3.x
+- Caminho universal para MLflow via `os.path.abspath`
 - Correção de encoding latin-1 para utf-8 nos dados da ANEEL
-- Filtro tolerante a espaços invisíveis nos dados brutos
+- Filtro tolerante a espaços invisíveis nos dados brutos da ANEEL
+- Script `montar_zip.py` para empacotar a entrega excluindo pastas pesadas
 
 ## Limitações
 
 - Histórico de 17 meses pode limitar a generalização do modelo
 - Eventos extremos de cheia são difíceis de capturar
 - Próximo passo: integração com coleta automatizada via RPA e detecção de anomalias
+
+## Aviso
+
+> **Propriedade Intelectual:** Este projeto e todo o seu código-fonte, automações e artefatos são de propriedade da LG Electronics do Brasil Ltda., desenvolvido no âmbito do projeto AX Academy - Digital Transformation (Convênio N.º 005/2025 - INOVA / IFAM). Consulte o arquivo LICENSE para mais detalhes.
